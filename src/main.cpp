@@ -14,8 +14,6 @@ void producer(int id, RingBuffer15d& buffer) {
 
 int main()
 {
-    using namespace concurrent;
-
     RingBuffer15d rg;
     auto a = std::async(std::launch::async, producer, 0, std::ref(rg));
 
