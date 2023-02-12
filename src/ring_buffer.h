@@ -29,12 +29,23 @@ namespace concurrent {
             if_empty_.notify_one();
         }
 
+        void push(T&& item) {
+            std::unique_lock<std::mutex> lck(mtx_);
+            buffer_[head_] = std::move(item);
+            increment_(head_);
+            if (empty_()) {
+                increment_(tail_);
+            }
+            lck.unlock();
+            if_empty_.notify_one();
+        }
+
         T pop() {
             std::unique_lock<std::mutex> lck(mtx_);
             if_empty_.wait(lck, [this] { return !empty_(); });
             auto old_tail = tail_;
             increment_(tail_);
-            return buffer_[old_tail];
+            return std::move(buffer_[old_tail]);
         }
 
         size_t size() {
