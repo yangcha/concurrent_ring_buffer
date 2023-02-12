@@ -5,3 +5,5 @@ cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 project(crb LANGUAGES CXX)
 
 add_executable(crb src/ring_buffer.h src/main.cpp)
+
+enable_testing ()
