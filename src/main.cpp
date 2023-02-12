@@ -4,7 +4,18 @@
 
 using RingBuffer15d = concurrent::RingBuffer<double, 15>;
 
-using RingBuffer15p= concurrent::RingBuffer<std::unique_ptr<int>, 15>;
+using RingBuffer15p = concurrent::RingBuffer<std::unique_ptr<int>, 15>;
+
+struct NonMovable {
+    NonMovable() = default;
+    NonMovable(char _c) : c{ _c } {}
+    NonMovable(const NonMovable& other) {
+        std::cout << "Copy construction" << std::endl;
+    }
+    char c{ 0 };
+};
+
+using RingBuffer15c = concurrent::RingBuffer<NonMovable, 15>;
 
 void producer_d(int id, RingBuffer15d& buffer) {
     for (int i = 0; i < 20; ++i) {
@@ -22,6 +33,16 @@ void producer_p(int id, RingBuffer15p& buffer) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
+
+
+void producer_c(int id, RingBuffer15c& buffer) {
+    for (char i = 0; i < 20; ++i) {
+        buffer.push(NonMovable{ i });
+        std::cout << "Producer " << id << " produced " << i << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+}
+
 
 int main()
 {
@@ -44,6 +65,16 @@ int main()
         std::cout << "Consumer consumed " << *rbp.pop() << std::endl;
     }
     ap.wait();
+
+    RingBuffer15c rbc;
+    auto ac = std::async(std::launch::async, producer_c, 2, std::ref(rbc));
+
+    rbc.push(NonMovable{ 1 });
+    for (int i = 0; i < 20; i++) {
+        std::cout << "Size is " << rbc.size() << std::endl;
+        std::cout << "Consumer consumed " << rbc.pop().c << std::endl;
+    }
+    ac.wait();
 
     return 0;
 }

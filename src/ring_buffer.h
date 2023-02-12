@@ -40,6 +40,9 @@ namespace concurrent {
             if_empty_.notify_one();
         }
 
+        // The output is either copied out or moved out
+        // If T has no move constructor, then output is copied out
+        // If T has move constructor, then output is moved out
         T pop() {
             std::unique_lock<std::mutex> lck(mtx_);
             if_empty_.wait(lck, [this] { return !empty_(); });
