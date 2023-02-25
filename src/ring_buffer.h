@@ -1,6 +1,7 @@
 #ifndef _CONCURRENT_RING_BUFFER_H_
 #define _CONCURRENT_RING_BUFFER_H_
 
+#include <utility>
 #include <mutex>
 #include <condition_variable>
 
