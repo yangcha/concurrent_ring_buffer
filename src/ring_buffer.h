@@ -16,26 +16,15 @@ namespace concurrent {
 
         size_t capacity() const { return N; }
 
-        void push(const T& item) {
-            std::unique_lock<std::mutex> lck(mtx_);
-            buffer_[head_] = item;
-            increment_(head_);
-            if (empty_()) {
-                increment_(tail_);
-            }
-            // Manual unlocking is done before notifying, to avoid waking up
-            // the waiting thread only to block again (see notify_one for details)
-            lck.unlock();
-            if_empty_.notify_one();
-        }
-
-        void push(T&& item) {
+        void push(T item) {
             std::unique_lock<std::mutex> lck(mtx_);
             buffer_[head_] = std::move(item);
             increment_(head_);
             if (empty_()) {
                 increment_(tail_);
             }
+            // Manual unlocking is done before notifying, to avoid waking up
+            // the waiting thread only to block again (see notify_one for details)
             lck.unlock();
             if_empty_.notify_one();
         }
