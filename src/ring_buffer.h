@@ -16,9 +16,9 @@ namespace concurrent {
 
         size_t capacity() const { return N; }
 
-        void push(T item) {
+        template <typename U> void push(U&& item) {
             std::unique_lock<std::mutex> lck(mtx_);
-            buffer_[head_] = std::move(item);
+            buffer_[head_] = std::forward<U>(item);
             increment_(head_);
             if (empty_()) {
                 increment_(tail_);

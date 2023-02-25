@@ -7,16 +7,17 @@ using RingBuffer15d = concurrent::RingBuffer<double, 15>;
 
 using RingBuffer15p = concurrent::RingBuffer<std::unique_ptr<int>, 15>;
 
-struct NonMovable {
-    NonMovable() = default;
-    NonMovable(char _c) : c{ _c } {}
-    NonMovable(const NonMovable& other) {
-        std::cout << "Copy construction" << std::endl;
-    }
+struct NoMove {
+    NoMove() = default;
+    NoMove(char i) : c{ i } {}
+    // prevents implicit declaration of default move constructor
+    // however, the class is still move-constructible because its
+    // copy constructor can bind to an rvalue argument
+    NoMove(const NoMove&) {}
     char c{ 0 };
 };
 
-using RingBuffer15c = concurrent::RingBuffer<NonMovable, 15>;
+using RingBuffer15c = concurrent::RingBuffer<NoMove, 15>;
 
 void producer_d(int id, RingBuffer15d& buffer) {
     for (int i = 0; i < 20; ++i) {
@@ -29,7 +30,8 @@ void producer_d(int id, RingBuffer15d& buffer) {
 
 void producer_p(int id, RingBuffer15p& buffer) {
     for (int i = 0; i < 20; ++i) {
-        buffer.push(std::make_unique<int>(i));
+        auto x = std::make_unique<int>(i);
+        buffer.push(std::move(x));
         std::cout << "Producer " << id << " produced " << i << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
@@ -38,7 +40,7 @@ void producer_p(int id, RingBuffer15p& buffer) {
 
 void producer_c(int id, RingBuffer15c& buffer) {
     for (char i = 0; i < 20; ++i) {
-        buffer.push(NonMovable{ i });
+        buffer.push(NoMove{ i });
         std::cout << "Producer " << id << " produced " << i << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
@@ -70,7 +72,7 @@ int main()
     RingBuffer15c rbc;
     auto ac = std::async(std::launch::async, producer_c, 2, std::ref(rbc));
 
-    rbc.push(NonMovable{ 1 });
+    rbc.push(NoMove{ 1 });
     for (int i = 0; i < 20; i++) {
         std::cout << "Size is " << rbc.size() << std::endl;
         std::cout << "Consumer consumed " << rbc.pop().c << std::endl;
